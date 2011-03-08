@@ -227,8 +227,16 @@ class OAuthRequest(object):
         except:
             pass
         # Escape key values before sorting.
-        key_values = [(escape(_utf8_str(k)), escape(_utf8_str(v))) \
-            for k,v in params.items()]
+        # Support multiple values for a query parameter as defined in OAuth spec
+        # at http://tools.ietf.org/html/rfc5849#section-3.4.1.3.2
+        key_values = []
+        for key, value in params.iteritems():
+            # 1.0a/9.1.1 states that kvp must be sorted by key, then by value,
+            # so we unpack sequence values into multiple items for sorting.
+            if hasattr(value, '__iter__'):
+                key_values.extend((key, item) for item in value)
+            else:
+                key_values.append((key, value))
         # Sort lexicographically, first after key, then after value.
         key_values.sort()
         # Combine key value pairs into a string.
